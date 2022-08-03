@@ -1,105 +1,122 @@
 import {
   ButtonItem,
   definePlugin,
-  DialogButton,
-  Menu,
-  MenuItem,
   PanelSection,
   PanelSectionRow,
-  Router,
   ServerAPI,
-  showContextMenu,
   staticClasses,
+  ToggleField,
+  Router
 } from "decky-frontend-lib";
-import { VFC } from "react";
-import { FaShip } from "react-icons/fa";
+import React from "react";
+import { useState, VFC } from "react";
+import { FaNetworkWired } from "react-icons/fa";
 
-import logo from "../assets/logo.png";
+function resolvePromise(promise: Promise<any>, callback: any) {
+  (async function () {
+    let data = await promise;
+    // if (data.success)
+    callback(data.result);
+  })();
+}
 
-// interface AddMethodArgs {
-//   left: number;
-//   right: number;
-// }
+interface StateArgs {
+  state: boolean,
+}
 
-const Content: VFC<{ serverAPI: ServerAPI }> = ({}) => {
-  // const [result, setResult] = useState<number | undefined>();
+const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+  const [configMessage, setConfigMessage] = useState<string | undefined>();
 
-  // const onClick = async () => {
-  //   const result = await serverAPI.callPluginMethod<AddMethodArgs, number>(
-  //     "add",
-  //     {
-  //       left: 2,
-  //       right: 2,
-  //     }
-  //   );
-  //   if (result.success) {
-  //     setResult(result.result);
-  //   }
-  // };
+  const [tailscaleToggle, setTailscaleToggle] = useState<boolean>(false);
+  const [webAuthToggle, setWebAuthToggle] = useState<boolean>(false);
+  const [ownIp, setOwnIp] = useState<string>("Not connected.");
 
+  resolvePromise(serverAPI.callPluginMethod<{}, boolean>("get_tailscale_state", {}), setTailscaleToggle);
+  resolvePromise(serverAPI.callPluginMethod<{}, boolean>("get_web_auth_state", {}), setWebAuthToggle);
+  resolvePromise(serverAPI.callPluginMethod<{}, string>("get_ip", {}), setOwnIp);
+
+  // TODO: Error messaging for auth...
   return (
-    <PanelSection title="Panel Section">
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={(e) =>
-            showContextMenu(
-              <Menu label="Menu" cancelText="CAAAANCEL" onCancel={() => {}}>
-                <MenuItem onSelected={() => {}}>Item #1</MenuItem>
-                <MenuItem onSelected={() => {}}>Item #2</MenuItem>
-                <MenuItem onSelected={() => {}}>Item #3</MenuItem>
-              </Menu>,
-              e.currentTarget ?? window
-            )
+    <React.Fragment>
+      <PanelSection title="Connection">
+        <PanelSectionRow>
+          {ownIp}
+
+          <ToggleField
+            label="Enable"
+            description="Connects your steamdeck to your other tailscale devices."
+            checked={tailscaleToggle}
+            onChange={async (value: boolean) => {
+              setTailscaleToggle(value);
+              serverAPI.callPluginMethod<StateArgs, boolean>("set_tailscale_state", { state: value })
+            }}
+          />
+        </PanelSectionRow>
+      </PanelSection>
+      <PanelSection title="Install and Configuration">
+        To perform setup, first hit Install/Update, then enable the config interface and setup in there.
+
+        <PanelSectionRow>
+          {configMessage}
+          <ButtonItem
+            layout="below"
+            onClick={async () => {
+              setConfigMessage("Installing, please wait...");
+              const result = await serverAPI.callPluginMethod<{}, string>("install", {});
+              if (result.success) {
+                setConfigMessage(result.result);
+              } else {
+                setConfigMessage("ERR: " + result.result);
+              }
+            }}
+          >
+            Install/Update
+          </ButtonItem>
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <ToggleField
+            label="Config Interface"
+            description="Enables the web interface for configuring Tailscale."
+            checked={webAuthToggle}
+            onChange={async (value: boolean) => {
+              setWebAuthToggle(value);
+              serverAPI.callPluginMethod<StateArgs, boolean>("set_web_auth_state", { state: value })
+            }}
+          />
+
+          {
+            webAuthToggle ?
+              <ButtonItem
+                layout="below"
+                onClick={() => {
+                  Router.CloseSideMenus();
+                  Router.NavigateToExternalWeb("http://localhost:8088");
+                }}
+              >
+                Open Config
+              </ButtonItem>
+              : null
           }
-        >
-          Server says yolo
-        </ButtonItem>
-      </PanelSectionRow>
 
-      <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
-        </div>
-      </PanelSectionRow>
-
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Router.CloseSideMenus();
-            Router.Navigate("/decky-plugin-test");
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>
-    </PanelSection>
-  );
-};
-
-const DeckyPluginRouterTest: VFC = () => {
-  return (
-    <div style={{ marginTop: "50px", color: "white" }}>
-      Hello World!
-      <DialogButton onClick={() => Router.NavigateToStore()}>
-        Go to Store
-      </DialogButton>
-    </div>
+          <ButtonItem
+            layout="below"
+            onClick={async () => {
+              await serverAPI.callPluginMethod<{}, string>("tailscale_logout", {});
+            }}
+          >
+            Logout of Tailscale
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
+    </React.Fragment>
   );
 };
 
 export default definePlugin((serverApi: ServerAPI) => {
-  serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
-    exact: true,
-  });
-
   return {
-    title: <div className={staticClasses.Title}>Example Plugin</div>,
+    title: <div className={staticClasses.Title}>Tailscale</div>,
     content: <Content serverAPI={serverApi} />,
-    icon: <FaShip />,
-    onDismount() {
-      serverApi.routerHook.removeRoute("/decky-plugin-test");
-    },
+    icon: <FaNetworkWired />
   };
 });
