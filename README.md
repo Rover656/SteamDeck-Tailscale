@@ -1,5 +1,7 @@
 # Tailscale Unofficial Steam Deck Plugin
 
+# ***This is not reaady for use yet, I will use GitHub releases once it is ready***
+
 A plugin for [decky-loader](https://github.com/SteamDeckHomebrew/decky-loader) to automate the installation and setup of Tailscale.
 
 This is heavily inspired by the [blog post](https://tailscale.com/blog/steam-deck/) that Tailscale published on July 18th 2020.
