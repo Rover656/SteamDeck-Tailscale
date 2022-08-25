@@ -2,7 +2,46 @@ import subprocess
 import os
 from threading import Lock
 
+# TODO: Perform updates automatically
 class Plugin:
+    # Extension installation management
+    async def get_install_state(self):
+        # TODO: See if /var/extensions/tailscale exists
+        if self.installing:
+            return "installing"
+        if os.path.exists("/var/lib/extensions/tailscale"):
+            return "installed"
+        return "not_installed"
+
+    async def install_tailscale(self, redownload=False):
+        # Don't attempt install if daemon is active.
+        if self.get_daemon_state(self):
+            return False
+
+        self.installing = True
+
+        # Download tailscale if it isn't downloaded.
+        if redownload or not os.path.exists("/var/lib/extensions/tailscale"):
+            self.download_tailscale(self)
+
+        # Refresh system extensions.
+        ret = subprocess.run(["systemd-sysext refresh"], shell=True)
+        self.installing = False
+
+        if ret.returncode != 0:
+            return "Failed to refresh system extensions."
+        return "Successfully installed."
+
+    async def reinstall_tailscale(self):
+        return self.install_tailscale(self)
+
+    def download_tailscale(self):
+        ret = subprocess.run(["bash ../plugins/steamdeck-tailscale-temp/assets/install.sh"], shell=True, capture_output=True)
+        if ret.returncode != 0:
+            print(ret)
+            return False
+        return True
+
     # Tailscaled
     def get_daemon_state(self):
         return subprocess.Popen(f"systemctl is-active tailscaled.service", stdout=subprocess.PIPE, shell=True).communicate()[0] == b'active\n'
@@ -26,7 +65,7 @@ class Plugin:
     async def set_tailscale_state(self, state):
         if state:
             if not self.set_daemon_state(self, True):
-                return False
+                return "Daemon is not running"
 
             try:
                 ret = subprocess.run(["tailscale up --operator=deck --ssh"], capture_output=True, shell=True, timeout=5)
@@ -43,7 +82,9 @@ class Plugin:
             except:
                 pass
 
-        return await self.get_tailscale_state(self)
+        if await self.get_tailscale_state(self):
+            return "Success"
+        return "Failure"
 
     # TODO: error messaging
     async def tailscale_logout(self):
@@ -121,3 +162,6 @@ class Plugin:
     async def _main(self):
         self.tailscaleWeb = None
         self.lock = Lock()
+        self.installing = False
+
+        await self.install_tailscale(self)

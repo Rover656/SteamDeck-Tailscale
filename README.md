@@ -1,37 +1,25 @@
-# React-Frontend Plugin Template 
+# Tailscale Unofficial Steam Deck Plugin
 
-Reference example for using [decky-frontend-lib](https://github.com/SteamDeckHomebrew/decky-frontend-lib) in a [PluginLoader](https://github.com/SteamDeckHomebrew/PluginLoader) plugin.
+A plugin for [decky-loader](https://github.com/SteamDeckHomebrew/decky-loader) to automate the installation and setup of Tailscale.
 
-## PluginLoader Discord [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/ZU74G2NJzk)
+This is heavily inspired by the [blog post](https://tailscale.com/blog/steam-deck/) that Tailscale published on July 18th 2020.
 
-## Developers
+This is an unofficial solution to bring Tailscale to the Steam Deck. It will be discontinued if/when an official solution emerges, I just built this for myself then discovered there are a number of people trying to do this.
 
-### Dependencies
+This is still in early development, expect random problems and for things to just break.
 
-This template relies on the user having `pnpm` installed on their system.  
-This can be downloaded from `npm` itself which is recommended. 
+## How to use
 
-#### Linux
+### Install the Plugin Loader
 
-```bash
-sudo npm i -g pnpm
-```
+Follow the instructions for [decky-loader](https://github.com/SteamDeckHomebrew/decky-loader) if you haven't got decky installed already.
 
-### Getting Started
+### Install the plugin
+This plugin is not currently on the plugin store, so you must download, clone and publish it using Decky's vscode tools.
 
-1. Clone the repository to use as an example for making your plugin.
-2. In your clone of the repository run these commands:
-   1. ``pnpm i``
-   2. ``pnpm run build``
-3. You should do this every time you make changes to your plugin.
+### Using the plugin
+When the plugin is loaded (on start of the deck, on install etc.) tailscale will be installed.
 
-Note: If you are recieveing build errors due to an out of date library, you should run this command inside of your repository:
+You then need to go into the Tailscale plugin menu and enable the Config UI, then visit it. Use this to log into Tailscale and select your network.
 
-```bash
-pnpm update decky-frontend-lib --latest
-```
-
-### Distribution
-
-WIP. Check back in later.
-
+Finally check the Enable toggle switch to enable Tailscale.
