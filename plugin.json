@@ -1,5 +1,5 @@
 {
-  "name": "Tailscale",
+  "name": "Tailscale (Unofficial)",
   "author": "Rover656",
   "flags": ["debug", "root"],
   "publish": {

@@ -10,7 +10,6 @@ import {
 } from "decky-frontend-lib";
 import React from "react";
 import { useState, VFC } from "react";
-import { FaNetworkWired } from "react-icons/fa";
 
 function resolvePromise(promise: Promise<any>, callback: any) {
   (async function () {
@@ -35,7 +34,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   resolvePromise(serverAPI.callPluginMethod<{}, string>("get_ip", {}), setOwnIp);
   resolvePromise(serverAPI.callPluginMethod<{}, string>("get_install_state", {}), setInstallState);
 
-  // TODO: Error messaging for auth...
   return (
     <React.Fragment>
       <PanelSection title="Connection">
@@ -53,6 +51,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           />
         </PanelSectionRow>
       </PanelSection>
+
       <PanelSection title="Configuration">
         <PanelSectionRow>
           <ToggleField
@@ -65,33 +64,42 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             }}
           />
 
+
           {
             webAuthToggle ?
-              <ButtonItem
-                layout="below"
-                onClick={() => {
-                  Router.CloseSideMenus();
-                  Router.NavigateToExternalWeb("http://localhost:8088");
-                }}
-              >
-                Open Config
-              </ButtonItem>
+              <PanelSectionRow>
+                <ButtonItem
+                  layout="below"
+                  onClick={() => {
+                    Router.CloseSideMenus();
+                    Router.NavigateToExternalWeb("http://localhost:8088");
+                  }}
+                >
+                  Open Config
+                </ButtonItem>
+              </PanelSectionRow>
               : null
           }
 
-          <ButtonItem
-            layout="below"
-            onClick={async () => {
-              await serverAPI.callPluginMethod<{}, string>("tailscale_logout", {});
-            }}
-          >
-            Logout of Tailscale
-          </ButtonItem>
+
+          <PanelSectionRow>
+            <ButtonItem
+              layout="below"
+              onClick={async () => {
+                await serverAPI.callPluginMethod<{}, string>("tailscale_logout", {});
+              }}
+            >
+              Logout of Tailscale
+            </ButtonItem>
+          </PanelSectionRow>
         </PanelSectionRow>
       </PanelSection>
+
       <PanelSection title="Manage Installation">
         <PanelSectionRow>
           Installation state: {installState}.
+        </PanelSectionRow>
+        <PanelSectionRow>
 
           <ButtonItem
             layout="below"
@@ -101,17 +109,22 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           >
             Refresh
           </ButtonItem>
+        </PanelSectionRow>
 
+        <PanelSectionRow>
           <ButtonItem
             layout="below"
             onClick={async () => {
               setInstallState("reinstalling");
-              // serverAPI.callPluginMethod<{}, string>("reinstall_tailscale", {});
+              serverAPI.callPluginMethod<{}, string>("reinstall_tailscale", {});
             }}
           >
             Reinstall/Update Tailscale
           </ButtonItem>
+        </PanelSectionRow>
 
+        {/* TODO: Advanced options to perform individual actions. */}
+        {/* <PanelSectionRow>
           <ToggleField
             label="Advanced Options"
             description="Shows advanced configuration options. These can be used to resolve issues."
@@ -121,19 +134,30 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
               // serverAPI.callPluginMethod<StateArgs, boolean>("set_web_auth_state", { state: value })
             }}
           />
-
-        {/* TODO: Advanced options to perform individual actions. */}
-
-        </PanelSectionRow>
+        </PanelSectionRow> */}
       </PanelSection>
-    </React.Fragment>
+    </React.Fragment >
   );
 };
+
+const TailscaleLogo = () => {
+  return <svg width="14" height="14" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle opacity="0.2" cx="3.4" cy="3.25" r="2.7" fill="currentColor"></circle>
+    <circle cx="3.4" cy="11.3" r="2.7" fill="currentColor"></circle>
+    <circle opacity="0.2" cx="3.4" cy="19.5" r="2.7" fill="currentColor"></circle>
+    <circle cx="11.5" cy="11.3" r="2.7" fill="currentColor"></circle>
+    <circle cx="11.5" cy="19.5" r="2.7" fill="currentColor"></circle>
+    <circle opacity="0.2" cx="11.5" cy="3.25" r="2.7" fill="currentColor"></circle>
+    <circle opacity="0.2" cx="19.5" cy="3.25" r="2.7" fill="currentColor"></circle>
+    <circle cx="19.5" cy="11.3" r="2.7" fill="currentColor"></circle>
+    <circle opacity="0.2" cx="19.5" cy="19.5" r="2.7" fill="currentColor"></circle>
+  </svg>;
+}
 
 export default definePlugin((serverApi: ServerAPI) => {
   return {
     title: <div className={staticClasses.Title}>Tailscale</div>,
     content: <Content serverAPI={serverApi} />,
-    icon: <FaNetworkWired />
+    icon: <TailscaleLogo />
   };
 });
